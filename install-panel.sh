@@ -559,7 +559,7 @@ ubuntu20_dep() {
   apt_update
 
   # Install Dependencies
-  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server nginx tar unzip git redis-server redis cron
+  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server apache2 tar unzip git redis-server redis cron
 
   # Enable services
   enable_services_debian_based
@@ -586,7 +586,7 @@ ubuntu18_dep() {
   apt_update
 
   # Install Dependencies
-  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server nginx tar unzip git redis-server redis cron
+  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server apache2 tar unzip git redis-server redis cron
 
   # Enable services
   enable_services_debian_based
@@ -612,7 +612,7 @@ debian_stretch_dep() {
   apt_update
 
   # Install Dependencies
-  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server nginx curl tar unzip git redis-server cron
+  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server apache2 curl tar unzip git redis-server cron
 
   # Enable services
   enable_services_debian_based
@@ -636,7 +636,7 @@ debian_buster_dep() {
   apt_update
 
   # install dependencies
-  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server nginx curl tar unzip git redis-server cron
+  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server apache2 curl tar unzip git redis-server cron
 
   # Enable services
   enable_services_debian_based
@@ -660,7 +660,7 @@ debian_dep() {
   apt_update
 
   # install dependencies
-  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server nginx curl tar unzip git redis-server cron
+  apt -y install php8.0 php8.0-{cli,gd,mysql,pdo,mbstring,tokenizer,bcmath,xml,fpm,curl,zip} mariadb-server apache2 curl tar unzip git redis-server cron
 
   # Enable services
   enable_services_debian_based
@@ -713,7 +713,7 @@ centos8_dep() {
   dnf install -y mariadb mariadb-server
 
   # Other dependencies
-  dnf install -y nginx curl tar zip unzip git redis
+  dnf install -y apache2 curl tar zip unzip git redis
 
   # Enable services
   enable_services_centos_based
@@ -804,55 +804,6 @@ letsencrypt() {
   fi
 }
 
-##### WEBSERVER CONFIGURATION FUNCTIONS #####
-
-configure_nginx() {
-  echo "* Configuring nginx .."
-
-  if [ $ASSUME_SSL == true ] && [ $CONFIGURE_LETSENCRYPT == false ]; then
-    DL_FILE="nginx_ssl.conf"
-  else
-    DL_FILE="nginx.conf"
-  fi
-
-  if [ "$OS" == "centos" ]; then
-    # remove default config
-    rm -rf /etc/nginx/conf.d/default
-
-    # download new config
-    curl -o /etc/nginx/conf.d/pterodactyl.conf $GITHUB_BASE_URL/configs/$DL_FILE
-
-    # replace all <domain> places with the correct domain
-    sed -i -e "s@<domain>@${FQDN}@g" /etc/nginx/conf.d/pterodactyl.conf
-
-    # replace all <php_socket> places with correct socket "path"
-    sed -i -e "s@<php_socket>@${PHP_SOCKET}@g" /etc/nginx/conf.d/pterodactyl.conf
-  else
-    # remove default config
-    rm -rf /etc/nginx/sites-enabled/default
-
-    # download new config
-    curl -o /etc/nginx/sites-available/pterodactyl.conf $GITHUB_BASE_URL/configs/$DL_FILE
-
-    # replace all <domain> places with the correct domain
-    sed -i -e "s@<domain>@${FQDN}@g" /etc/nginx/sites-available/pterodactyl.conf
-
-    # replace all <php_socket> places with correct socket "path"
-    sed -i -e "s@<php_socket>@${PHP_SOCKET}@g" /etc/nginx/sites-available/pterodactyl.conf
-
-    # on debian 9, TLS v1.3 is not supported (see #76)
-    [ "$OS" == "debian" ] && [ "$OS_VER_MAJOR" == "9" ] && sed -i 's/ TLSv1.3//' /etc/nginx/sites-available/pterodactyl.conf
-
-    # enable pterodactyl
-    ln -sf /etc/nginx/sites-available/pterodactyl.conf /etc/nginx/sites-enabled/pterodactyl.conf
-  fi
-
-  if [ "$ASSUME_SSL" == false ] && [ "$CONFIGURE_LETSENCRYPT" == false ]; then
-    systemctl restart nginx
-  fi
-
-  echo "* nginx configured!"
-}
 
 ##### MAIN FUNCTIONS #####
 
